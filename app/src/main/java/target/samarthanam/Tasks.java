@@ -48,4 +48,16 @@ public class Tasks {
         return tasks;
     }
 
+    public static String createTasktext(JSONArray jsonObjects) {
+        String taskText="Tasks details are :";
+        for (int i = 0; i < jsonObjects.length(); i++) {
+            try {
+                taskText = taskText + "Task number " + (i+1) + jsonObjects.getJSONObject(i).getString("task") + " created by " + jsonObjects.getJSONObject(i).getString("created_by") + " assigned to " + jsonObjects.getJSONObject(i).getString("assigned_to");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return taskText;
+    }
+
 }

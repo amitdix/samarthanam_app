@@ -3,6 +3,9 @@ package target.samarthanam;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -27,7 +30,10 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+
+import static target.samarthanam.Tasks.createTasktext;
 
 public class NewsHome extends AppCompatActivity {
 
@@ -44,13 +50,15 @@ public class NewsHome extends AppCompatActivity {
     TableLayout tl;
     TableRow tr;
     TextView companyTV,valueTV;
+    TextToSpeech t1;
+    private Handler viewHandler;
 
     /**
      * The {@link ViewPager} that will host the section contents.
      */
     private ViewPager mViewPager;
 //    public final static String alltasksURL = "http://192.168.1.34:8000/tasks/api/v1/tasks";
-    public final static String alltasksURL = "http://10.92.248.165:8000/tasks/api/v1/tasks";
+    public final static String alltasksURL = "http://10.93.113.194:8000/tasks/api/v1/tasks";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -194,9 +202,15 @@ public class NewsHome extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         String taskstring= "{\n" +
-                                "        \"task\": \"Create mobile app\",\n" +
-                                "        \"created_by\": \"amit Dixit 4\",\n" +
-                                "        \"assigned_to\": \"Prateek1\",\n" +
+                                "        \"task\": \" " +
+                                editTask.getText() +
+                                "\",\n" +
+                                "        \"created_by\": \" " +
+                                editAssign.getText() +
+                                "\",\n" +
+                                "        \"assigned_to\": \"" +
+                                editAssign.getText() +
+                                "\",\n" +
                                 "        \"status\": \"open\",\n" +
                                 "        \"created_date\": \"03/04/2016\",\n" +
                                 "        \"expected_completion_date\": \"03/03/2016\"\n" +
@@ -205,7 +219,7 @@ public class NewsHome extends AppCompatActivity {
                         {
                             JSONObject task = new JSONObject(taskstring);
                             CallAPI obj = new CallAPI();
-                            String taskUrl = "http://10.92.248.165:8000/tasks/api/v1/tasks";
+                            String taskUrl = "http://10.93.113.194:8000/tasks/api/v1/tasks";
                             AsyncTask<String, String, String> execute = obj.execute(taskUrl, "POST", taskstring);
                             String result = execute.get();
 
@@ -249,6 +263,43 @@ public class NewsHome extends AppCompatActivity {
                 try
                 {
                     arrayOfTasks = Tasks.fromJson(new JSONArray(result));
+                    String toSpeak;
+                    if (t1 != null && createTasktext(new JSONArray(result)) != null) {
+
+                        toSpeak = createTasktext(new JSONArray(result));
+                        t1.setSpeechRate((float) 0.8);
+                        t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null, "1");
+                        //Toast.makeText(getContext(), toSpeak, Toast.LENGTH_LONG).show();
+                    }
+
+                    t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                        @Override
+                        public void onInit(int status) {
+                            if (status != TextToSpeech.ERROR) {
+                                t1.setLanguage(Locale.UK);
+                                t1.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                                    @Override
+                                    public void onStart(String utteranceId) {
+
+                                    }
+
+                                    @Override
+                                    public void onDone(String utteranceId) {
+                                        Runnable run = new Runnable() {
+                                            public void run() {
+                                            }
+                                        };
+                                        viewHandler.post(run);
+                                    }
+
+                                    @Override
+                                    public void onError(String utteranceId) {
+
+                                    }
+                                });
+                            }
+                        }
+                    });
                 }
                 catch (JSONException e)
                 {
